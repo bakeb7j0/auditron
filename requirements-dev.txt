@@ -4,3 +4,6 @@ flake8>=6.1.0
 pylint>=3.2.0
 pyright[nodejs]>=1.1.373
 pytest>=8.3.0
+black>=24.8.0
+isort>=5.13.0
+pre-commit>=3.7.0

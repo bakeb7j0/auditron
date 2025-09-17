@@ -1,23 +1,37 @@
 repos:
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.13.0
+    rev: v0.4.10
     hooks:
       - id: ruff
         args: ["--fix"]
 
   - repo: https://github.com/psf/black
-    rev: 25.1.0
+    rev: 24.8.0
     hooks:
       - id: black
 
-  - repo: https://github.com/PyCQA/flake8
-    rev: 7.3.0
-    hooks:
-      - id: flake8
-
-  - repo: https://github.com/pre-commit/mirrors-isort
-    rev: v5.10.1
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
     hooks:
       - id: isort
         args: ["--profile", "black"]
 
+  - repo: https://github.com/PyCQA/flake8
+    rev: 7.1.1
+    hooks:
+      - id: flake8
+        args: ["--select=E9,F63,F7,F82", "--show-source", "--statistics"]
+
+  - repo: local
+    hooks:
+      - id: pylint
+        name: pylint (errors only)
+        entry: pylint -E auditron.py strategies utils scripts
+        language: system
+        types: [python]
+      - id: pyright
+        name: pyright
+        entry: pyright
+        language: system
+        pass_filenames: false
+        types: [python]

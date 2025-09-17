@@ -6,9 +6,12 @@ on:
   pull_request:
   workflow_dispatch:
 
+env:
+  PYTHONUTF8: "1"
+
 jobs:
   lint:
-    name: Lint (ruff, flake8, pylint, pyright)
+    name: Lint (pre-commit: ruff+black+isort+flake8+pylint+pyright)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,24 +23,27 @@ jobs:
           cache: pip
           cache-dependency-path: requirements-dev.txt
 
-      - name: Install dev tools
+      - name: Install dev toolchain
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
 
-      - name: Ruff
-        run: ruff check .
+      - name: Show versions
+        run: |
+          python -V
+          ruff --version
+          black --version
+          isort --version-number
+          flake8 --version
+          pylint --version || true
+          pyright --version || true
+          pre-commit --version
 
-      - name: Flake8 (errors-mostly)
-        run: flake8 --select=E9,F63,F7,F82 --show-source --statistics
-
-      - name: Pylint (errors-only)
-        run: pylint -E auditron.py strategies utils scripts
-
-      - name: Pyright
+      - name: Run pre-commit on all files
         env:
           PYTHONPATH: ${{ github.workspace }}
-        run: pyright
+        run: |
+          pre-commit run --all-files
 
   unit-tests:
     name: Unit tests (pytest)
