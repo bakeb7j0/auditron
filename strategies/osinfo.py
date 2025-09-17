@@ -1,5 +1,6 @@
 from .base import AuditCheck, AuditContext
 
+
 class OSInfo(AuditCheck):
     name = "osinfo"
     requires: tuple[str, ...] = ()
@@ -8,7 +9,7 @@ class OSInfo(AuditCheck):
         return True
 
     def run(self, ctx: AuditContext) -> None:
-        from utils.db import start_check, mark_check, record_error
+        from utils.db import mark_check, record_error, start_check
         cid = start_check(ctx.db, ctx.session_id, ctx.host["id"], self.name)
         try:
             res_os = ctx.ssh.run("if [ -f /etc/os-release ]; then . /etc/os-release; echo \"$NAME|$VERSION_ID|$ID\"; else cat /etc/centos-release; fi")

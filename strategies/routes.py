@@ -1,5 +1,6 @@
 from .base import AuditCheck, AuditContext
 
+
 class Routes(AuditCheck):
     name = "routes"
     requires = ("ip",)
@@ -8,7 +9,7 @@ class Routes(AuditCheck):
         return ctx.ssh.which("ip")
 
     def run(self, ctx: AuditContext) -> None:
-        from utils.db import start_check, mark_check, record_error, ts
+        from utils.db import mark_check, record_error, start_check, ts
         cid = start_check(ctx.db, ctx.session_id, ctx.host["id"], self.name)
         try:
             cur_routes = ctx.ssh.run("ip route show || true").out

@@ -1,4 +1,6 @@
 import re
+
+
 def parse_rpm_verify(output: str):
     rows = []
     for line in output.splitlines():

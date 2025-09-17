@@ -1,4 +1,6 @@
-import os, sqlite3, time
+import os
+import sqlite3
+import time
 
 SCHEMA_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "docs", "schema.sql")
 

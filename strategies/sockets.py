@@ -1,5 +1,7 @@
-from .base import AuditCheck, AuditContext
 from utils.parsing import parse_ss_listen
+
+from .base import AuditCheck, AuditContext
+
 
 class Sockets(AuditCheck):
     name = "sockets"
@@ -9,7 +11,7 @@ class Sockets(AuditCheck):
         return ctx.ssh.which("ss") or ctx.ssh.which("netstat")
 
     def run(self, ctx: AuditContext) -> None:
-        from utils.db import start_check, mark_check, record_error
+        from utils.db import mark_check, record_error, start_check
         cid = start_check(ctx.db, ctx.session_id, ctx.host["id"], self.name)
         try:
             ctx.db.execute("DELETE FROM listen_sockets WHERE host_id=?", (ctx.host["id"],))

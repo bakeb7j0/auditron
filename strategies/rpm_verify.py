@@ -1,7 +1,12 @@
-import sqlite3, base64, shlex
-from .base import AuditCheck, AuditContext
-from utils.parsing import parse_rpm_verify
+import base64
+import shlex
+import sqlite3
+
 from utils.compress import gz_bytes, sha256_bytes
+from utils.parsing import parse_rpm_verify
+
+from .base import AuditCheck, AuditContext
+
 
 class RpmVerify(AuditCheck):
     name = "rpm_verify"
@@ -53,7 +58,7 @@ class RpmVerify(AuditCheck):
         return gz, len(raw), sha
 
     def run(self, ctx: AuditContext) -> None:
-        from utils.db import start_check, mark_check, record_error, ts
+        from utils.db import mark_check, record_error, start_check, ts
         cid = start_check(ctx.db, ctx.session_id, ctx.host["id"], self.name)
         try:
             res = ctx.ssh.run("rpm -Va --nodigest --nosignature || true")

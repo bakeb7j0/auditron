@@ -1,4 +1,7 @@
-import shlex, subprocess
+import shlex
+import subprocess
+
+
 class SSHResult:
     def __init__(self, rc: int, out: str, err: str):
         self.rc = rc; self.out = out; self.err = err

@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-import sqlite3, os
+import os
+import sqlite3
+
 DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "db", "auditron.db")
 SCHEMA = os.path.join(os.path.dirname(os.path.dirname(__file__)), "docs", "schema.sql")
 

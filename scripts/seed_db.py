@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
-import argparse, sqlite3, sys
+import argparse
+import sqlite3
+import sys
 from pathlib import Path
+
 ROOT = Path(__file__).resolve().parents[1]
 DB_PATH = ROOT / "db" / "auditron.db"
 SCHEMA = ROOT / "docs" / "schema.sql"

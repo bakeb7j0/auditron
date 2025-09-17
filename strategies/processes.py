@@ -1,5 +1,6 @@
 from .base import AuditCheck, AuditContext
 
+
 class Processes(AuditCheck):
     name = "processes"
     requires = ("ps",)
@@ -8,7 +9,7 @@ class Processes(AuditCheck):
         return ctx.ssh.which("ps")
 
     def run(self, ctx: AuditContext) -> None:
-        from utils.db import start_check, mark_check, record_error
+        from utils.db import mark_check, record_error, start_check
         cid = start_check(ctx.db, ctx.session_id, ctx.host["id"], self.name)
         try:
             ctx.db.execute("DELETE FROM processes WHERE host_id=?", (ctx.host["id"],))
