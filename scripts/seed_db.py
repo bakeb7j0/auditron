@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import argparse, os, sqlite3, sys
+import argparse, sqlite3, sys
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DB_PATH = ROOT / "db" / "auditron.db"
@@ -16,7 +16,8 @@ def init_defaults(conn):
     if not cur.fetchone():
         conn.execute("INSERT INTO global_defaults(id) VALUES (1)"); conn.commit()
         print("Inserted global default flags (all ON).")
-    else: print("Global defaults already present.")
+    else:
+        print("Global defaults already present.")
 
 def add_host(conn, name, ip, user, key, port, sudo):
     conn.execute("INSERT INTO hosts(hostname, ip, ssh_user, ssh_key_path, ssh_port, use_sudo) VALUES (?,?,?,?,?,?)",
@@ -36,4 +37,6 @@ def main():
     if args.add_host:
         if not args.ip: print("--ip is required with --add-host"); sys.exit(1)
         add_host(conn, args.add_host, args.ip, args.user, args.key, args.port, args.sudo)
-if __name__ == "__main__": main()
+
+if __name__ == "__main__":
+    main()
