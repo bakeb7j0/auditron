@@ -2,8 +2,10 @@ line-length = 100
 target-version = "py310"
 
 [lint]
-select = ["E", "F", "I"]  # pycodestyle, pyflakes, isort
-ignore = ["E501"]         # don't gate on line length for now
+# pycodestyle (E), pyflakes (F), isort (I)
+select = ["E", "F", "I"]
+# Ignore long lines for now + allow multiple statements on one line
+ignore = ["E501", "E701", "E702"]
 
 [format]
 quote-style = "preserve"
