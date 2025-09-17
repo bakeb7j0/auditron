@@ -1,15 +1,68 @@
+import sqlite3, base64
 from .base import AuditCheck, AuditContext
-from . import register
 from utils.parsing import parse_rpm_verify
-@register
+from utils.compress import gz_bytes, sha256_bytes
+
 class RpmVerify(AuditCheck):
-    name="rpm_verify"; requires=("rpm",)
-    def probe(self, ctx: AuditContext)->bool: return ctx.ssh.which("rpm")
-    def run(self, ctx: AuditContext)->None:
-        from utils.db import start_check, mark_check, record_error
+    name = "rpm_verify"
+    requires = ("rpm",)
+
+    def probe(self, ctx: AuditContext) -> bool:
+        return ctx.ssh.which("rpm")
+
+    def _capture_meta(self, ctx: AuditContext, path: str):
+        stat = ctx.ssh.run(f"stat -Lc '%f|%u|%g|%s|%Y|%i' {path}")
+        sha = ctx.ssh.run(f"sha256sum {path} 2>/dev/null | awk '{print $1}' || true")
+        mode, uid, gid, size, mtime, inode = (stat.out.strip().split('|')+['','','','',''])[:6]
+        try:
+            size = int(size); uid=int(uid); gid=int(gid); mtime=int(mtime); inode=int(inode,10 if inode.startswith('0x') else 10)
+        except Exception:
+            pass
+        mode_int = int(mode, 16) if mode else None
+        return dict(mode=mode_int, uid=uid, gid=gid, size=size, mtime=mtime, inode=inode, sha=sha.out.strip())
+
+    def _is_textish(self, ctx: AuditContext, path: str) -> bool:
+        mime = ctx.ssh.run(f"file -b --mime-type {path} 2>/dev/null || echo text/plain").out.strip()
+        return (mime.startswith("text/") or mime.endswith("+xml") or mime.endswith("/json") or mime.endswith("/xml"))
+
+    def _snapshot(self, ctx: AuditContext, path: str):
+        lim = int(ctx.limits.get("max_snapshot_bytes", 524288))
+        sizeq = ctx.ssh.run(f"stat -Lc %s {path} 2>/dev/null || echo 0")
+        try: size = int(sizeq.out.strip())
+        except: size = 0
+        if size <= 0 or size > lim: return None, None, None
+        if not self._is_textish(ctx, path): return None, None, None
+        b64 = ctx.ssh.run(f"base64 -w0 {path} 2>/dev/null || true").out.strip()
+        if not b64: return None, None, None
+        raw = base64.b64decode(b64.encode('utf-8'))
+        gz = gz_bytes(raw) if int(ctx.limits.get("gzip_snapshots",1)) else raw
+        sha = sha256_bytes(raw)
+        return gz, len(raw), sha
+
+    def run(self, ctx: AuditContext) -> None:
+        from utils.db import start_check, mark_check, record_error, ts
         cid = start_check(ctx.db, ctx.session_id, ctx.host["id"], self.name)
-        res = ctx.ssh.run("rpm -Va")
-        if res.rc!=0 and not res.out.strip(): record_error(ctx.db,cid,"run",res.err,res.rc); mark_check(ctx.db,cid,"ERROR","rpm -Va failed"); return
-        _rows = parse_rpm_verify(res.out)
-        # TODO: persist verify flags and optionally file snapshots
-        mark_check(ctx.db, cid, "SUCCESS", None)
+        try:
+            res = ctx.ssh.run("rpm -Va --nodigest --nosignature || true")
+            lines = [l for l in res.out.splitlines() if l.strip()]
+            for ln in lines:
+                parsed = parse_rpm_verify(ln)
+                if not parsed: continue
+                flags, path = parsed[0]
+                meta = self._capture_meta(ctx, path)
+                ctx.db.execute("INSERT INTO file_meta(path, mode, uid, gid, size, mtime, inode, sha256) VALUES (?,?,?,?,?,?,?,?)",
+                               (path, meta.get('mode'), meta.get('uid'), meta.get('gid'), meta.get('size'), meta.get('mtime'), meta.get('inode'), meta.get('sha')))
+                meta_id = ctx.db.execute("SELECT last_insert_rowid()").fetchone()[0]
+                snap_id = None
+                gz, length, sha = self._snapshot(ctx, path)
+                if gz is not None:
+                    ctx.db.execute("INSERT INTO file_snapshots(sha256, content_gz, length_bytes, mime, captured_at) VALUES (?,?,?,?,?)",
+                                   (sha, sqlite3.Binary(gz), length, "text/plain", ts()))
+                    snap_id = ctx.db.execute("SELECT last_insert_rowid()").fetchone()[0]
+                ctx.db.execute("INSERT INTO rpm_verified_files(host_id, package_id, path, verify_flags, changed, snapshot_id, meta_id) VALUES (?,?,?,?,?,?,?)",
+                               (ctx.host["id"], None, path, flags, 1, snap_id, meta_id))
+            ctx.db.commit()
+            mark_check(ctx.db, cid, "SUCCESS", None)
+        except Exception as e:
+            record_error(ctx.db, cid, "run", str(e), -1)
+            mark_check(ctx.db, cid, "ERROR", str(e))
