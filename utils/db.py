@@ -8,10 +8,8 @@ def connect(db_path: str):
     return conn
 
 def ensure_schema(conn: sqlite3.Connection):
-    # Create schema if tables are missing
     with open(SCHEMA_PATH, "r", encoding="utf-8") as f:
-        sql = f.read()
-    conn.executescript(sql)
+        conn.executescript(f.read())
     conn.commit()
 
 def get_hosts(conn):

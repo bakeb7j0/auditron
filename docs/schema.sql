@@ -1,6 +1,5 @@
 PRAGMA foreign_keys=ON;
 
--- Core
 CREATE TABLE IF NOT EXISTS hosts (
   id INTEGER PRIMARY KEY,
   hostname TEXT NOT NULL,
@@ -38,7 +37,6 @@ CREATE TABLE IF NOT EXISTS errors (
   exit_code INTEGER
 );
 
--- Config
 CREATE TABLE IF NOT EXISTS global_defaults (
   id INTEGER PRIMARY KEY CHECK (id = 1),
   rpm_inventory INTEGER DEFAULT 1,
@@ -58,6 +56,7 @@ CREATE TABLE IF NOT EXISTS global_defaults (
   firewall INTEGER DEFAULT 1,
   netif INTEGER DEFAULT 1,
   hw INTEGER DEFAULT 1,
+  routes INTEGER DEFAULT 1,
   max_snapshot_bytes INTEGER DEFAULT 524288,
   gzip_snapshots INTEGER DEFAULT 1,
   command_timeout_sec INTEGER DEFAULT 60
@@ -69,13 +68,12 @@ CREATE TABLE IF NOT EXISTS host_overrides (
   rpm_inventory INTEGER, rpm_history INTEGER, rpm_verify INTEGER, file_snapshots INTEGER,
   users INTEGER, groups INTEGER, bash_history INTEGER, logins INTEGER, sockets INTEGER,
   processes INTEGER, services INTEGER, nmap INTEGER, resources INTEGER, osinfo INTEGER,
-  firewall INTEGER, netif INTEGER, hw INTEGER,
+  firewall INTEGER, netif INTEGER, hw INTEGER, routes INTEGER,
   max_snapshot_bytes INTEGER,
   gzip_snapshots INTEGER,
   command_timeout_sec INTEGER
 );
 
--- RPM inventory / verify
 CREATE TABLE IF NOT EXISTS rpm_packages (
   id INTEGER PRIMARY KEY,
   host_id INTEGER NOT NULL REFERENCES hosts(id) ON DELETE CASCADE,
@@ -86,8 +84,7 @@ CREATE INDEX IF NOT EXISTS ix_rpm_pkg_host_name ON rpm_packages(host_id, name);
 
 CREATE TABLE IF NOT EXISTS file_meta (
   id INTEGER PRIMARY KEY,
-  path TEXT,
-  mode INTEGER, uid INTEGER, gid INTEGER, size INTEGER, mtime INTEGER, inode INTEGER,
+  path TEXT, mode INTEGER, uid INTEGER, gid INTEGER, size INTEGER, mtime INTEGER, inode INTEGER,
   sha256 TEXT
 );
 CREATE INDEX IF NOT EXISTS ix_file_meta_path ON file_meta(path);
@@ -112,21 +109,16 @@ CREATE TABLE IF NOT EXISTS rpm_verified_files (
   meta_id INTEGER REFERENCES file_meta(id)
 );
 
--- Identity
 CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY,
   host_id INTEGER NOT NULL REFERENCES hosts(id) ON DELETE CASCADE,
-  uid INTEGER,
-  name TEXT,
-  home TEXT,
-  shell TEXT
+  uid INTEGER, name TEXT, home TEXT, shell TEXT
 );
 
 CREATE TABLE IF NOT EXISTS groups (
   id INTEGER PRIMARY KEY,
   host_id INTEGER NOT NULL REFERENCES hosts(id) ON DELETE CASCADE,
-  gid INTEGER,
-  name TEXT
+  gid INTEGER, name TEXT
 );
 
 CREATE TABLE IF NOT EXISTS bash_history (
@@ -142,35 +134,21 @@ CREATE TABLE IF NOT EXISTS bash_history (
 CREATE TABLE IF NOT EXISTS login_events (
   id INTEGER PRIMARY KEY,
   host_id INTEGER NOT NULL REFERENCES hosts(id) ON DELETE CASCADE,
-  user TEXT,
-  src TEXT,
-  tty TEXT,
-  login_time TEXT,
-  logout_time TEXT,
-  duration_sec INTEGER,
+  user TEXT, src TEXT, tty TEXT,
+  login_time TEXT, logout_time TEXT, duration_sec INTEGER,
   outcome TEXT
 );
 
--- Network & processes
 CREATE TABLE IF NOT EXISTS listen_sockets (
   id INTEGER PRIMARY KEY,
   host_id INTEGER NOT NULL REFERENCES hosts(id) ON DELETE CASCADE,
-  proto TEXT,
-  local TEXT,
-  state TEXT,
-  pid INTEGER,
-  process TEXT
+  proto TEXT, local TEXT, state TEXT, pid INTEGER, process TEXT
 );
 
 CREATE TABLE IF NOT EXISTS processes (
   id INTEGER PRIMARY KEY,
   host_id INTEGER NOT NULL REFERENCES hosts(id) ON DELETE CASCADE,
-  pid INTEGER,
-  ppid INTEGER,
-  user TEXT,
-  start_time TEXT,
-  etime TEXT,
-  cmd TEXT
+  pid INTEGER, ppid INTEGER, user TEXT, start_time TEXT, etime TEXT, cmd TEXT
 );
 
 CREATE TABLE IF NOT EXISTS proc_open_files (
@@ -179,16 +157,12 @@ CREATE TABLE IF NOT EXISTS proc_open_files (
   path TEXT
 );
 
--- Services
 CREATE TABLE IF NOT EXISTS services (
   id INTEGER PRIMARY KEY,
   host_id INTEGER NOT NULL REFERENCES hosts(id) ON DELETE CASCADE,
-  name TEXT,
-  state TEXT,
-  target TEXT
+  name TEXT, state TEXT, target TEXT
 );
 
--- Nmap
 CREATE TABLE IF NOT EXISTS nmap_results (
   id INTEGER PRIMARY KEY,
   session_id INTEGER NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
@@ -196,7 +170,6 @@ CREATE TABLE IF NOT EXISTS nmap_results (
   scan_xml_gz BLOB
 );
 
--- Resources / Disks / OS / Firewall / NetIf / HW
 CREATE TABLE IF NOT EXISTS resource_snapshots (
   id INTEGER PRIMARY KEY,
   host_id INTEGER NOT NULL REFERENCES hosts(id) ON DELETE CASCADE,
@@ -230,20 +203,15 @@ CREATE TABLE IF NOT EXISTS net_interfaces (
   name TEXT, mac TEXT, mtu INTEGER, state TEXT, addrs_json TEXT
 );
 
-CREATE TABLE IF NOT EXISTS hw_pci (
-  id INTEGER PRIMARY KEY,
-  host_id INTEGER NOT NULL REFERENCES hosts(id) ON DELETE CASCADE,
-  line TEXT
-);
+CREATE TABLE IF NOT EXISTS hw_pci ( id INTEGER PRIMARY KEY, host_id INTEGER NOT NULL REFERENCES hosts(id) ON DELETE CASCADE, line TEXT );
+CREATE TABLE IF NOT EXISTS hw_usb ( id INTEGER PRIMARY KEY, host_id INTEGER NOT NULL REFERENCES hosts(id) ON DELETE CASCADE, line TEXT );
+CREATE TABLE IF NOT EXISTS hw_block ( id INTEGER PRIMARY KEY, host_id INTEGER NOT NULL REFERENCES hosts(id) ON DELETE CASCADE, json TEXT );
 
-CREATE TABLE IF NOT EXISTS hw_usb (
+-- NEW: Routing state (current, rules, config text blobs)
+CREATE TABLE IF NOT EXISTS routing_state (
   id INTEGER PRIMARY KEY,
   host_id INTEGER NOT NULL REFERENCES hosts(id) ON DELETE CASCADE,
-  line TEXT
-);
-
-CREATE TABLE IF NOT EXISTS hw_block (
-  id INTEGER PRIMARY KEY,
-  host_id INTEGER NOT NULL REFERENCES hosts(id) ON DELETE CASCADE,
-  json TEXT
+  kind TEXT CHECK (kind IN ('current','rules','config')),
+  content TEXT,
+  captured_at TEXT
 );
