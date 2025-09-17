@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import sqlite3, os, sys, textwrap
+import sqlite3, os
 DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "db", "auditron.db")
 SCHEMA = os.path.join(os.path.dirname(os.path.dirname(__file__)), "docs", "schema.sql")
 
@@ -28,20 +28,20 @@ def add_host(c):
 
 def remove_host(c):
     hid=int(input("Host id to remove: ").strip())
-    c.execute("DELETE FROM hosts WHERE id=\n?", (hid,)); c.commit()
+    c.execute("DELETE FROM hosts WHERE id=?", (hid,)); c.commit()
     print("Host removed.")
 
 def defaults_menu(c):
     cur=c.execute("SELECT * FROM global_defaults WHERE id=1"); row=cur.fetchone()
-    if not row: c.execute("INSERT INTO global_defaults(id) VALUES(1)"); c.commit(); row=c.execute("SELECT * FROM global_defaults WHERE id=1").fetchone()
+    if not row: c.execute("INSERT INTO global_defaults(id) VALUES(1)"); c.commit()
     cols=[d[0] for d in c.execute("PRAGMA table_info(global_defaults)")]; cols=cols[1:]
     flags=[k for k in cols if k not in ("max_snapshot_bytes","gzip_snapshots","command_timeout_sec")]
     while True:
-        print("\nGlobal default checks (1=on,0=off):")
         row=c.execute("SELECT * FROM global_defaults WHERE id=1").fetchone(); vals=dict(zip(["id"]+cols,row))
+        print("\nGlobal default checks (1=on,0=off):")
         for i,k in enumerate(flags,1):
             print(f"  {i}. {k} = {vals.get(k)}")
-        print("  s) set limit values (max_snapshot_bytes, gzip_snapshots, command_timeout_sec)")
+        print("  s) set limits (max_snapshot_bytes, gzip_snapshots, command_timeout_sec)")
         print("  q) back")
         ch=input("> ").strip()
         if ch=='q': break
@@ -62,13 +62,12 @@ def defaults_menu(c):
 def host_overrides_menu(c):
     list_hosts(c)
     hid=int(input("\nHost id to edit overrides: ").strip())
-    cur=c.execute("SELECT id FROM host_overrides WHERE host_id=\n?", (hid,)).fetchone()
-    if not cur:
-        c.execute("INSERT INTO host_overrides(host_id) VALUES (?)", (hid,)); c.commit()
+    cur=c.execute("SELECT id FROM host_overrides WHERE host_id=?", (hid,)).fetchone()
+    if not cur: c.execute("INSERT INTO host_overrides(host_id) VALUES (?)", (hid,)); c.commit()
     cols=[d[0] for d in c.execute("PRAGMA table_info(host_overrides)")]
     flags=[k for k in cols if k not in ("id","host_id","max_snapshot_bytes","gzip_snapshots","command_timeout_sec")]
     while True:
-        row=c.execute("SELECT * FROM host_overrides WHERE host_id=\n?", (hid,)).fetchone()
+        row=c.execute("SELECT * FROM host_overrides WHERE host_id=?", (hid,)).fetchone()
         vals=dict(zip(cols,row))
         print("\nOverrides (None=inherit, 1=on, 0=off):")
         for i,k in enumerate(flags,1):
@@ -80,14 +79,14 @@ def host_overrides_menu(c):
         if ch=='q': break
         if ch=='n':
             sets=", ".join([f"{k}=NULL" for k in flags+["max_snapshot_bytes","gzip_snapshots","command_timeout_sec"]])
-            c.execute(f"UPDATE host_overrides SET {sets} WHERE host_id=\n?", (hid,)); c.commit(); continue
+            c.execute(f"UPDATE host_overrides SET {sets} WHERE host_id=?", (hid,)); c.commit(); continue
         if ch=='s':
             msb=input(f"max_snapshot_bytes [{vals.get('max_snapshot_bytes')}]: ").strip()
-            if msb: c.execute("UPDATE host_overrides SET max_snapshot_bytes=? WHERE host_id=\n?", (int(msb),hid))
+            if msb: c.execute("UPDATE host_overrides SET max_snapshot_bytes=? WHERE host_id=?", (int(msb),hid))
             gz=input(f"gzip_snapshots [{vals.get('gzip_snapshots')}]: ").strip()
-            if gz: c.execute("UPDATE host_overrides SET gzip_snapshots=? WHERE host_id=\n?", (int(gz),hid))
+            if gz: c.execute("UPDATE host_overrides SET gzip_snapshots=? WHERE host_id=?", (int(gz),hid))
             to=input(f"command_timeout_sec [{vals.get('command_timeout_sec')}]: ").strip()
-            if to: c.execute("UPDATE host_overrides SET command_timeout_sec=? WHERE host_id=\n?", (int(to),hid))
+            if to: c.execute("UPDATE host_overrides SET command_timeout_sec=? WHERE host_id=?", (int(to),hid))
             c.commit(); continue
         try:
             idx=int(ch)-1; key=flags[idx]
@@ -95,7 +94,7 @@ def host_overrides_menu(c):
             if curv is None: newv=0
             elif curv==0: newv=1
             else: newv=None
-            c.execute(f"UPDATE host_overrides SET {key}=? WHERE host_id=\n?", (newv,hid)); c.commit()
+            c.execute(f"UPDATE host_overrides SET {key}=? WHERE host_id=?", (newv,hid)); c.commit()
         except Exception: print("Invalid choice.")
 
 def main():
@@ -116,4 +115,6 @@ def main():
         elif ch=='5': host_overrides_menu(c)
         elif ch=='q': break
         else: print("Invalid choice.")
-if __name__ == "__main__": main()
+
+if __name__ == "__main__":
+    main()
