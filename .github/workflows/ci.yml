@@ -4,6 +4,7 @@ on:
   push:
     branches: [ "main" ]
   pull_request:
+  workflow_dispatch:
 
 jobs:
   lint:
@@ -12,27 +13,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: pip
+          cache-dependency-path: requirements-dev.txt
 
-      - name: Install linters
+      - name: Install dev tools
         run: |
           python -m pip install --upgrade pip
-          pip install ruff flake8 pylint
-          # Prefer pyright's pip package with nodejs extra (bundles Node runtime)
-          pip install "pyright[nodejs]" || pip install pyright
+          pip install -r requirements-dev.txt
 
       - name: Ruff
         run: ruff check .
 
-      - name: Flake8 (errors-only)
+      - name: Flake8 (errors-mostly)
         run: flake8 --select=E9,F63,F7,F82 --show-source --statistics
 
       - name: Pylint (errors-only)
-        run: |
-          pylint -E auditron.py strategies utils scripts
+        run: pylint -E auditron.py strategies utils scripts
 
       - name: Pyright
         env:
@@ -49,15 +49,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
+          cache-dependency-path: requirements-dev.txt
 
       - name: Install test deps
         run: |
           python -m pip install --upgrade pip
-          pip install pytest
+          pip install -r requirements-dev.txt
+
       - name: Run pytest (unit)
         env:
           PYTHONPATH: ${{ github.workspace }}
@@ -71,15 +74,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: pip
+          cache-dependency-path: requirements-dev.txt
 
       - name: Install test deps
         run: |
           python -m pip install --upgrade pip
-          pip install pytest
+          pip install -r requirements-dev.txt
 
       - name: Prepare DB (fresh) and seed defaults
         env:

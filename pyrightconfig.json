@@ -1,0 +1,8 @@
+{
+  "include": ["."],
+  "typeCheckingMode": "basic",
+  "reportMissingImports": "warning",
+  "reportMissingModuleSource": "warning",
+  "pythonVersion": "3.10",
+  "extraPaths": ["."]
+}
