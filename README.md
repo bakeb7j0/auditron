@@ -66,3 +66,4 @@ python scripts/config_utility.py
 - [docs/future.md](docs/future.md) — roadmap
 - [docs/cli-bootstrap.md](docs/cli-bootstrap.md) — CLI examples
 - [docs/component-map.md](docs/component-map.md)
+- [docs/implementation-plan.md](docs/implementation-plan.md)
