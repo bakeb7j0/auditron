@@ -1,34 +1,31 @@
 from abc import ABC, abstractmethod
+from typing import Any, Optional
 
 
 class AuditContext:
-    """
-    Carries per-host state for audit checks.
-    Includes host config, SSH client, DB handle, and runtime limits.
-    """
-    def __init__(self, host: dict, ssh, db, limits: dict, clock):
+    def __init__(
+        self,
+        host: dict,
+        ssh: Any,
+        db: Any,
+        limits: dict,
+        clock: Any,
+        session_id: Optional[int] = None,
+    ):
         self.host = host
         self.ssh = ssh
         self.db = db
         self.limits = limits
         self.clock = clock
-        self.session_id = None
+        self.session_id = session_id
+
 
 class AuditCheck(ABC):
-    """
-    Strategy base class.
-    Each audit check implements probe() to decide applicability
-    and run() to execute the check.
-    """
     name: str = "base"
     requires: tuple[str, ...] = ()
 
-    @abstractmethod
-    def probe(self, ctx: AuditContext) -> bool:
-        """Return True if prerequisites (binaries, permissions) are met."""
-        ...
+    def probe(self, ctx: "AuditContext") -> bool:
+        return True
 
     @abstractmethod
-    def run(self, ctx: AuditContext) -> None:
-        """Execute the audit check and persist results into DB."""
-        ...
+    def run(self, ctx: "AuditContext") -> None: ...

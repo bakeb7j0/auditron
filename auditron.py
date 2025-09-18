@@ -1,81 +1,73 @@
 #!/usr/bin/env python3
 import argparse
-import os
-import sys
 import time
+from typing import List
 
-from strategies import REGISTRY
 from strategies.base import AuditContext
-from utils import db as dbutil
+from strategies.osinfo import OSInfo
+from strategies.processes import Processes
+from strategies.routes import Routes
+from strategies.rpm_inventory import RpmInventory
+from strategies.rpm_verify import RpmVerify
+from strategies.sockets import Sockets
+from utils import db
 from utils.ssh_runner import SSHClient
 
-try:
-    from rich.progress import Progress
-    use_rich = True
-except Exception:
-    use_rich = False
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "db", "auditron.db")
+def run_all_checks(ctx: AuditContext) -> None:
+    checks: List[type] = [OSInfo, Processes, Routes, RpmInventory, RpmVerify, Sockets]
+    for Check in checks:
+        Check().run(ctx)
 
-def resolve_limits(conn, host_id: int) -> dict:
-    cur = conn.execute("SELECT max_snapshot_bytes, gzip_snapshots, command_timeout_sec FROM global_defaults WHERE id=1")
-    g = cur.fetchone() or (524288, 1, 60)
-    cur = conn.execute("SELECT max_snapshot_bytes, gzip_snapshots, command_timeout_sec FROM host_overrides WHERE host_id=?", (host_id,))
-    h = cur.fetchone()
-    msb, gz, to = g
-    if h:
-        msb = h[0] if h[0] is not None else msb
-        gz  = h[1] if h[1] is not None else gz
-        to  = h[2] if h[2] is not None else to
-    return {"max_snapshot_bytes": int(msb), "gzip_snapshots": int(gz), "command_timeout_sec": int(to)}
 
-def main():
-    ap = argparse.ArgumentParser(description="Auditron Orchestrator (serial v1)")
-    ap.add_argument("--resume", action="store_true", help="Resume last incomplete session if present")
-    ap.add_argument("--host", help="Limit to a single host (hostname or IP)")
-    ap.add_argument("--skip", help="Comma-separated check names to skip")
-    ap.add_argument("--timeout", type=int, help="Override per-command timeout seconds")
-    args = ap.parse_args()
+def run_mode(db_path: str, mode: str) -> None:
+    conn = db.connect(db_path)
+    db.ensure_schema(conn)
+    session_id = db.new_session(conn, mode)
 
-    conn = dbutil.connect(DB_PATH); dbutil.ensure_schema(conn)
-    session_id = dbutil.get_unfinished_session(conn) if args.resume else None
-    if not session_id: session_id = dbutil.new_session(conn, "resume" if args.resume else "new")
+    hosts = db.get_hosts(conn)
+    for host in hosts:
+        ssh = SSHClient(host)
+        ctx = AuditContext(
+            host=host, ssh=ssh, db=conn, limits={}, clock=time, session_id=session_id
+        )
+        run_all_checks(ctx)
 
-    hosts = dbutil.get_hosts(conn)
-    if args.host:
-        hosts = [h for h in hosts if h["hostname"] == args.host or (h.get("ip") and h["ip"] == args.host)]
-        if not hosts:
-            print(f"No matching host for {args.host}"); sys.exit(1)
+    db.finish_session(conn, session_id)
 
-    skip_set = set([(args.skip or "").split(",")][0]) if args.skip else set()
 
-    def run_host(h):
-        limits = resolve_limits(conn, h["id"])
-        if args.timeout: limits["command_timeout_sec"] = args.timeout
-        ssh = SSHClient(h, timeout=limits["command_timeout_sec"])
-        ctx = AuditContext(host=h, ssh=ssh, db=conn, limits=limits, clock=time)
-        ctx.session_id = session_id
-        for strat_cls in REGISTRY:
-            strat = strat_cls()
-            if strat.name in skip_set:
-                rid = dbutil.start_check(conn, session_id, h["id"], strat.name)
-                dbutil.mark_check(conn, rid, "SKIP", "skipped via CLI"); continue
-            if hasattr(strat, "probe") and not strat.probe(ctx):
-                rid = dbutil.start_check(conn, session_id, h["id"], strat.name)
-                dbutil.mark_check(conn, rid, "SKIP", "prereq not met"); continue
-            strat.run(ctx)
+def run_resume(db_path: str) -> None:
+    conn = db.connect(db_path)
+    db.ensure_schema(conn)
+    session_id = db.get_unfinished_session(conn)
+    if session_id is None:
+        print("No unfinished session found.")
+        return
 
-    if use_rich:
-        with Progress() as progress:
-            t = progress.add_task("[cyan]Auditing hosts...", total=len(hosts))
-            for h in hosts:
-                progress.console.print(f"[bold]Host:[/bold] {h['hostname'] or h.get('ip','?')}")
-                run_host(h); progress.advance(t)
+    hosts = db.get_hosts(conn)
+    for host in hosts:
+        ssh = SSHClient(host)
+        ctx = AuditContext(
+            host=host, ssh=ssh, db=conn, limits={}, clock=time, session_id=session_id
+        )
+        run_all_checks(ctx)
+
+    db.finish_session(conn, session_id)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Auditron - Host auditing tool")
+    parser.add_argument("mode", choices=["fresh", "resume"], help="Run mode")
+    parser.add_argument(
+        "--db", default="auditron.db", help="Path to the SQLite database file"
+    )
+    args = parser.parse_args()
+
+    if args.mode == "fresh":
+        run_mode(args.db, "fresh")
     else:
-        for i,h in enumerate(hosts,1):
-            print(f"[{i}/{len(hosts)}] Host: {h['hostname'] or h.get('ip','?')}"); run_host(h)
+        run_resume(args.db)
 
-    dbutil.finish_session(conn, session_id); print("Audit complete. Session:", session_id)
 
 if __name__ == "__main__":
     main()

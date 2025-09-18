@@ -1,3 +1,5 @@
+from utils.db import mark_check, record_error, start_check
+
 from .base import AuditCheck, AuditContext
 
 
@@ -6,29 +8,36 @@ class RpmInventory(AuditCheck):
     requires = ("rpm",)
 
     def probe(self, ctx: AuditContext) -> bool:
-        return ctx.ssh.which("rpm")
+        return bool(ctx.ssh.which("rpm"))
 
     def run(self, ctx: AuditContext) -> None:
-        from utils.db import mark_check, record_error, start_check
         cid = start_check(ctx.db, ctx.session_id, ctx.host["id"], self.name)
         try:
-            ctx.db.execute("DELETE FROM rpm_packages WHERE host_id=?", (ctx.host["id"],))
-            res = ctx.ssh.run("rpm -qa --qf '%{NAME}|%{EPOCH}|%{VERSION}|%{RELEASE}|%{ARCH}|%{INSTALLTIME}\\n'")
+            fmt = "%{NAME}|%{EPOCH}|%{VERSION}|%{RELEASE}|%{ARCH}|%{INSTALLTIME}\\n"
+            res = ctx.ssh.run(f"rpm -qa --qf '{fmt}'")
             if res.rc != 0:
-                record_error(ctx.db, cid, "run", res.err, res.rc); mark_check(ctx.db, cid, "ERROR", "rpm -qa failed"); return
-            rows = []
-            for line in res.out.splitlines():
-                if not line.strip(): continue
-                name, epoch, ver, rel, arch, inst = (line.split("|") + ["","","","","",""])[:6]
-                try: inst = int(inst)
-                except: inst = None
-                rows.append((ctx.host["id"], name, epoch, ver, rel, arch, inst))
-            ctx.db.executemany(
-                "INSERT INTO rpm_packages(host_id,name,epoch,version,release,arch,install_time) VALUES (?,?,?,?,?,?,?)",
-                rows
-            )
-            ctx.db.commit()
+                record_error(ctx.db, cid, "run", res.err, res.rc)
+                mark_check(ctx.db, cid, "ERROR", "rpm -qa failed")
+                return
+
+            rows: list[tuple] = []
+            for ln in (ln for ln in res.out.splitlines() if ln.strip()):
+                parts = (ln.split("|") + ["", "", "", "", "", ""])[:6]
+                name, epoch, ver, rel, arch, inst = parts
+                try:
+                    inst_val = int(inst)
+                except ValueError:
+                    inst_val = None
+                rows.append((ctx.host["id"], name, epoch, ver, rel, arch, inst_val))
+
+            if rows:
+                ctx.db.executemany(
+                    "INSERT INTO rpm_packages(host_id,name,epoch,version,release,arch,install_time) VALUES (?,?,?,?,?,?,?)",
+                    rows,
+                )
+                ctx.db.commit()
+
             mark_check(ctx.db, cid, "SUCCESS", None)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - keep broad to log unexpected failures
             record_error(ctx.db, cid, "run", str(e), -1)
             mark_check(ctx.db, cid, "ERROR", str(e))
