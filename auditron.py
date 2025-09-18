@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import time
-from typing import List
+from typing import List, Tuple
 
 from strategies.base import AuditContext
 from strategies.osinfo import OSInfo
@@ -55,18 +55,51 @@ def run_resume(db_path: str) -> None:
     db.finish_session(conn, session_id)
 
 
-def main() -> None:
+def parse_cli() -> Tuple[str, str]:
+    """Support either positional mode or flags (--fresh / --resume)."""
     parser = argparse.ArgumentParser(description="Auditron - Host auditing tool")
-    parser.add_argument("mode", choices=["fresh", "resume"], help="Run mode")
     parser.add_argument(
         "--db", default="auditron.db", help="Path to the SQLite database file"
     )
+    # Optional flags for mode (backward/forward compatible with CI & humans)
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("--fresh", action="store_true", help="Start a fresh session")
+    group.add_argument("--resume", action="store_true", help="Resume last session")
+    # Positional (optional) for previous behavior
+    parser.add_argument(
+        "mode",
+        nargs="?",
+        choices=["fresh", "resume"],
+        help="Run mode (positional) — or use --fresh/--resume",
+    )
+
     args = parser.parse_args()
 
-    if args.mode == "fresh":
-        run_mode(args.db, "fresh")
+    # Resolve final mode with conflict checks
+    mode = args.mode
+    if args.fresh:
+        if mode and mode != "fresh":
+            parser.error("Conflicting mode: gave positional '%s' and --fresh" % mode)
+        mode = "fresh"
+    if args.resume:
+        if mode and mode != "resume":
+            parser.error("Conflicting mode: gave positional '%s' and --resume" % mode)
+        mode = "resume"
+
+    if mode is None:
+        parser.error(
+            "Specify mode: 'fresh' or 'resume' (positional) or use --fresh/--resume"
+        )
+
+    return mode, args.db
+
+
+def main() -> None:
+    mode, db_path = parse_cli()
+    if mode == "fresh":
+        run_mode(db_path, "fresh")
     else:
-        run_resume(args.db)
+        run_resume(db_path)
 
 
 if __name__ == "__main__":
