@@ -34,7 +34,6 @@ auditron/
 │   ├── test-plan.md
 │   ├── future.md
 │   └── cli-bootstrap.md
-├── seed-prompt.md
 ├── Makefile
 └── tests/
     └── test_parsers.py
@@ -67,3 +66,6 @@ python scripts/config_utility.py
 - [docs/cli-bootstrap.md](docs/cli-bootstrap.md) — CLI examples
 - [docs/component-map.md](docs/component-map.md)
 - [docs/implementation-plan.md](docs/implementation-plan.md)
+
+## Prompt Files
+- [docs/seed-prompt.md](docs/seed-prompt.md)
