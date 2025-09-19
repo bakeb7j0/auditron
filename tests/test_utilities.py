@@ -215,6 +215,8 @@ class TestNetworkUtilities:
         import socket
 
         for ip in valid_ips:
+            valid_ipv4 = False
+            valid_ipv6 = False
             try:
                 socket.inet_pton(socket.AF_INET, ip)
                 valid_ipv4 = True
@@ -223,8 +225,7 @@ class TestNetworkUtilities:
                     socket.inet_pton(socket.AF_INET6, ip)
                     valid_ipv6 = True
                 except socket.error:
-                    valid_ipv6 = False
-                valid_ipv4 = False
+                    pass
 
             assert valid_ipv4 or valid_ipv6
 

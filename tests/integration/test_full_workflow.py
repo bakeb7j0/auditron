@@ -163,7 +163,7 @@ class TestFullWorkflow:
             conn.close()
 
             # Run fresh workflow
-            auditron.run_mode(db_path, "fresh")
+            auditron.run_mode(db_path, "new")
 
             # Verify session was created and finished even with no hosts
             conn = db.connect(db_path)

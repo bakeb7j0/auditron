@@ -21,13 +21,13 @@ Test Categories:
 Usage:
     # Run all unit tests
     pytest -m "not integration"
-    
+
     # Run only integration tests
     pytest -m integration
-    
+
     # Run specific test file
     pytest tests/test_db.py
-    
+
     # Run with coverage
     pytest --cov=utils --cov=strategies --cov=auditron
 """
