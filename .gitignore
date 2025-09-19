@@ -206,3 +206,8 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 mash-it.sh
+
+runtime/
+runtime/*
+r/
+r/*

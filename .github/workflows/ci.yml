@@ -67,11 +67,17 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
 
-      - name: Run pytest (unit)
+      - name: Validate test structure
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
-          pytest -q -m "not integration" --maxfail=1 --disable-warnings
+          python validate_tests.py
+
+      - name: Run pytest (unit tests with coverage)
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          pytest -q -m "not integration" --maxfail=5 --cov=auditron --cov=utils --cov=strategies --cov-report=term --cov-fail-under=75
 
   integration:
     name: Integration tests (smoke + optional @integration)
@@ -106,15 +112,21 @@ jobs:
         run: |
           python auditron.py --resume
 
-      - name: Run pytest (marked integration) if present
+      - name: Run pytest (integration tests)
         env:
           PYTHONPATH: ${{ github.workspace }}
-        shell: bash
         run: |
-          shopt -s nullglob
-          files=(tests/integration/test_*.py)
-          if [ ${#files[@]} -gt 0 ]; then
-            pytest -q -m integration --maxfail=1 --disable-warnings
-          else
-            echo "No integration tests found; skipping."
-          fi
+          pytest -v -m integration --maxfail=3 --tb=short tests/integration/
+
+      - name: Generate coverage report
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          pytest --cov=auditron --cov=utils --cov=strategies --cov-report=html --cov-report=term-missing -m "not integration" --quiet
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        if: matrix.python-version == '3.11'
+        with:
+          name: coverage-report
+          path: htmlcov/

@@ -1,38 +1,27 @@
-# Seed Prompt
+# Auditron Seed Prompt (Context Bootstrap)
 
-This repository uses the **mash-it workflow** to apply all file changes.
+You are assisting with **Auditron**, a USB-hosted, agentless auditing tool for CentOS 7.6. It SSHes into configured hosts, runs modular checks using the **Strategy pattern**, and stores configuration + results in a **SQLite** DB on the USB. Execution is **resumable**; checks are toggleable globally and per-host.
 
-## Workflow Rules
-- **Repo-root only**: Scripts must refuse to run unless executed at `git rev-parse --show-toplevel`.
-- **Preflight before writes**: Verify repo root before touching files.
-- **Ignore the tool**: Ensure `.gitignore` contains `mash-it.sh`.
-- **Plain heredocs only**: No encoding, no base64/gzip.
-- **One prompt per file**: Each file written by a dedicated heredoc.
-- **README.md auto-lists prompt files**.
-- **Commit style**: `git add -A && git commit -s -m "<message>"`.
+**Repo entrypoint:** `auditron.py`  
+**Docs:** `docs/` (EARS requirements in `requirements-ears.md` are authoritative)  
+**Plug-ins:** `strategies/*.py` each implement `probe()` + `run()` with `AuditContext`.
 
-## Delivery of mash-it
-Every mash-it script must be delivered:
-1. Full `mash-it.sh` in chat.  
-2. Paste-once one-liner in Canvas.  
-3. As a downloadable file.  
+Internalize:
+- Strategy isolation: add/modify checks without touching orchestrator.
+- Resume semantics: `sessions`, `check_runs`, `errors` tables track progress.
+- Data model: normalized; text/config snapshots are gzip-compressed + SHA-256 deduped.
+- CentOS 7.6 tooling: `rpm`, `yum history`, `ss|netstat`, `systemctl`, `last|lastb`, `ip`, `nmcli`, etc.
+- Security: read-only posture; sudo limited to read-only commands; path allow/deny for content capture; UTC normalization.
 
-Invocation:
-```bash
-cd ~/sandbox/github/myrepo && ./mash-it.sh
-```
+Typical tasks:
+- Implement/extend strategies (e.g., firewall, nmap, hardware).
+- Write robust parsers + unit tests.
+- Improve resume/progress UX.
+- Add reports/exporters (future).
 
-## Absolutes
-- Never use placeholders or fake content.  
-- No directory guessing.  
-- Refuse if not at repo root.  
-
-## Engineering Standards
-- **All changes must pass linters and type checkers**: Ruff, Black, isort, Flake8, Pylint, Pyright.  
-- **All changes must pass unit + integration tests** in the CI pipeline.  
-- **Every commit must run cleanly with `pre-commit run --all-files` before push**.  
-- **Follow GitHub flow branching model**:
-  - `feature/*` branches fork from `release/*`.  
-  - `release/*` branches fork from `main`.  
-- Code must be **self-contained, readable, and maintainable**.
-
+Start by reading:
+- `docs/requirements-ears.md`
+- `docs/architecture.md`
+- `docs/check-specs.md`
+- `docs/data-model.md`
+- `docs/schema.sql`

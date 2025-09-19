@@ -79,11 +79,11 @@ def parse_cli() -> Tuple[str, str]:
     mode = args.mode
     if args.fresh:
         if mode and mode != "fresh":
-            parser.error("Conflicting mode: gave positional '%s' and --fresh" % mode)
+            parser.error(f"Conflicting mode: gave positional '{mode}' and --fresh")
         mode = "fresh"
     if args.resume:
         if mode and mode != "resume":
-            parser.error("Conflicting mode: gave positional '%s' and --resume" % mode)
+            parser.error(f"Conflicting mode: gave positional '{mode}' and --resume")
         mode = "resume"
 
     if mode is None:
@@ -97,7 +97,7 @@ def parse_cli() -> Tuple[str, str]:
 def main() -> None:
     mode, db_path = parse_cli()
     if mode == "fresh":
-        run_mode(db_path, "fresh")
+        run_mode(db_path, "new")
     else:
         run_resume(db_path)
 
