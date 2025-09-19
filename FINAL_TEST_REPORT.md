@@ -112,10 +112,12 @@ python3 tests/test_runner.py
 
 ### CI/CD Integration ✅
 The test suite integrates seamlessly with GitHub Actions:
+- **Triggers**: Runs on `main`, `feature/*` branches, and PRs to main
 - **Lint Job** - Code quality checks (ruff, flake8, pyright)
 - **Unit Tests** - Multi-Python version testing (3.10, 3.11, 3.12)  
 - **Integration Tests** - End-to-end workflow validation
 - **Coverage Reporting** - Detailed coverage analysis and artifacts
+- **Feature Branch Support** - Early feedback during development
 
 ## 📋 **Documentation Updated**
 
