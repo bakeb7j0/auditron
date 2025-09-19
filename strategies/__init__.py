@@ -1,3 +1,8 @@
+"""Audit strategy registry for Auditron.
+
+This module imports and registers all available audit strategies
+for execution by the main orchestrator.
+"""
 from .base import AuditCheck  # re-export
 from .osinfo import OSInfo
 from .processes import Processes

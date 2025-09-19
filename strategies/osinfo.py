@@ -1,7 +1,17 @@
+"""OS and kernel information audit strategy.
+
+Collects basic operating system information including OS release,
+kernel version, and system architecture for system identification.
+"""
 from .base import AuditCheck, AuditContext
 
 
 class OSInfo(AuditCheck):
+    """Operating system information collection strategy.
+    
+    Gathers basic OS identification including distribution name,
+    version, kernel information, and system architecture.
+    """
     name = "osinfo"
     requires: tuple[str, ...] = ()
 

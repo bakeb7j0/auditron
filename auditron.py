@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+"""Auditron - USB-hosted agentless auditing tool for CentOS 7.6 systems.
+
+This module provides the main orchestrator and CLI interface for Auditron,
+a comprehensive security and compliance auditing tool that executes
+modular audit strategies on remote systems via SSH.
+"""
 import argparse
 import time
 from typing import List, Tuple
@@ -15,12 +21,24 @@ from utils.ssh_runner import SSHClient
 
 
 def run_all_checks(ctx: AuditContext) -> None:
+    """Execute all enabled audit strategies for a given host context.
+    
+    Args:
+        ctx: AuditContext containing host, SSH client, database connection,
+             and session information for strategy execution.
+    """
     checks: List[type] = [OSInfo, Processes, Routes, RpmInventory, RpmVerify, Sockets]
     for Check in checks:
         Check().run(ctx)
 
 
 def run_mode(db_path: str, mode: str) -> None:
+    """Execute audit in specified mode (new session).
+    
+    Args:
+        db_path: Path to SQLite database file
+        mode: Session mode ('new' for fresh audit)
+    """
     conn = db.connect(db_path)
     db.ensure_schema(conn)
     session_id = db.new_session(conn, mode)
@@ -37,6 +55,11 @@ def run_mode(db_path: str, mode: str) -> None:
 
 
 def run_resume(db_path: str) -> None:
+    """Resume an interrupted audit session.
+    
+    Args:
+        db_path: Path to SQLite database file containing unfinished session
+    """
     conn = db.connect(db_path)
     db.ensure_schema(conn)
     session_id = db.get_unfinished_session(conn)
@@ -95,6 +118,7 @@ def parse_cli() -> Tuple[str, str]:
 
 
 def main() -> None:
+    """Main entry point for Auditron CLI application."""
     mode, db_path = parse_cli()
     if mode == "fresh":
         run_mode(db_path, "new")

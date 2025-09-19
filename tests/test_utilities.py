@@ -7,7 +7,7 @@ import pytest
 
 # Test compression utilities if they exist
 try:
-    from utils.compress import compress_text, compute_sha256, decompress_text
+    from utils.compress import gz_bytes, sha256_bytes
 
     HAS_COMPRESS = True
 except ImportError:
@@ -18,88 +18,65 @@ except ImportError:
 class TestCompressionUtilities:
     """Test compression and hashing utilities."""
 
-    def test_compress_text_basic(self):
-        """Test basic text compression."""
-        text = "This is a test string for compression."
-        compressed = compress_text(text)
+    def test_gz_bytes_basic(self):
+        """Test basic bytes compression."""
+        data = b"This is a test string for compression."
+        compressed = gz_bytes(data)
 
         assert isinstance(compressed, bytes)
-        assert len(compressed) < len(text.encode("utf-8"))  # Should be smaller
+        assert len(compressed) < len(data)  # Should be smaller
 
-    def test_decompress_text_basic(self):
-        """Test basic text decompression."""
-        original = "This is a test string for compression and decompression."
-        compressed = compress_text(original)
-        decompressed = decompress_text(compressed)
+    def test_gz_bytes_empty(self):
+        """Test compressing empty bytes."""
+        compressed = gz_bytes(b"")
+        assert isinstance(compressed, bytes)
 
-        assert decompressed == original
+    def test_gz_bytes_large_data(self):
+        """Test compressing large data."""
+        # Create large data with repetitive content (should compress well)
+        large_data = b"This line repeats many times.\n" * 1000
 
-    def test_compress_decompress_roundtrip(self):
-        """Test compression/decompression round trip."""
-        test_cases = [
-            "Simple text",
-            "Text with\nnewlines\nand\ttabs",
-            "Unicode text: áéíóú ñ ç",
-            "Empty string: ",
-            "Repeated text " * 100,  # Should compress well
-            "Random: 8fj3n9f8j3f9j8f3j9f8j3f9j",  # May not compress well
-        ]
+        compressed = gz_bytes(large_data)
 
-        for original in test_cases:
-            compressed = compress_text(original)
-            decompressed = decompress_text(compressed)
-            assert decompressed == original, f"Failed for: {original[:50]}..."
+        assert isinstance(compressed, bytes)
+        assert len(compressed) < len(large_data) / 2  # Should compress significantly
 
-    def test_compute_sha256_basic(self):
+    def test_sha256_bytes_basic(self):
         """Test SHA256 computation."""
-        text = "Hello, world!"
-        sha256_hash = compute_sha256(text)
+        data = b"Hello, world!"
+        sha256_hash = sha256_bytes(data)
 
         # Verify it's a valid SHA256 hex string
         assert len(sha256_hash) == 64
         assert all(c in "0123456789abcdef" for c in sha256_hash)
 
         # Verify it matches expected hash
-        expected = hashlib.sha256(text.encode("utf-8")).hexdigest()
+        expected = hashlib.sha256(data).hexdigest()
         assert sha256_hash == expected
 
-    def test_compute_sha256_consistency(self):
+    def test_sha256_bytes_consistency(self):
         """Test SHA256 computation is consistent."""
-        text = "Consistent hashing test"
-        hash1 = compute_sha256(text)
-        hash2 = compute_sha256(text)
+        data = b"Consistent hashing test"
+        hash1 = sha256_bytes(data)
+        hash2 = sha256_bytes(data)
 
         assert hash1 == hash2
 
-    def test_compute_sha256_different_inputs(self):
+    def test_sha256_bytes_different_inputs(self):
         """Test SHA256 produces different hashes for different inputs."""
-        text1 = "Input one"
-        text2 = "Input two"
+        data1 = b"Input one"
+        data2 = b"Input two"
 
-        hash1 = compute_sha256(text1)
-        hash2 = compute_sha256(text2)
+        hash1 = sha256_bytes(data1)
+        hash2 = sha256_bytes(data2)
 
         assert hash1 != hash2
 
-    def test_compress_empty_string(self):
-        """Test compressing empty string."""
-        compressed = compress_text("")
-        decompressed = decompress_text(compressed)
-
-        assert decompressed == ""
-
-    def test_compress_large_text(self):
-        """Test compressing large text."""
-        # Create a large text with repetitive content (should compress well)
-        large_text = "This line repeats many times.\n" * 1000
-
-        compressed = compress_text(large_text)
-        decompressed = decompress_text(compressed)
-
-        assert decompressed == large_text
-        assert (
-            len(compressed) < len(large_text.encode("utf-8")) / 2
-        )  # Should compress significantly
+    def test_sha256_bytes_empty(self):
+        """Test SHA256 of empty bytes."""
+        sha256_hash = sha256_bytes(b"")
+        expected = hashlib.sha256(b"").hexdigest()
+        assert sha256_hash == expected
 
 
 class TestPathValidation:

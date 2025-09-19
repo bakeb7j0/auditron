@@ -44,7 +44,7 @@ class TestAuditCheckBase:
     def test_audit_check_abstract(self):
         """Test that AuditCheck is abstract and cannot be instantiated."""
         with pytest.raises(TypeError, match="abstract"):
-            AuditCheck()  # pylint: disable=abstract-class-instantiated
+            AuditCheck()  # pylint: disable=abstract-class-instantiated  # type: ignore[abstract]
 
     def test_audit_check_default_probe(self):
         """Test default probe implementation."""
