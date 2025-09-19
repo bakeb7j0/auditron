@@ -3,6 +3,7 @@
 This module provides database connection management, schema enforcement,
 session tracking, and audit data persistence for the Auditron system.
 """
+
 import os
 import sqlite3
 import time
@@ -15,10 +16,10 @@ SCHEMA_PATH = os.path.join(
 
 def connect(db_path: str) -> sqlite3.Connection:
     """Create SQLite database connection with foreign key enforcement.
-    
+
     Args:
         db_path: Path to SQLite database file
-        
+
     Returns:
         Configured SQLite connection with foreign keys enabled
     """
@@ -29,7 +30,7 @@ def connect(db_path: str) -> sqlite3.Connection:
 
 def ensure_schema(conn: sqlite3.Connection) -> None:
     """Apply database schema idempotently from docs/schema.sql.
-    
+
     Args:
         conn: SQLite database connection
     """
@@ -40,10 +41,10 @@ def ensure_schema(conn: sqlite3.Connection) -> None:
 
 def get_hosts(conn: sqlite3.Connection) -> list[dict]:
     """Retrieve all configured audit hosts from database.
-    
+
     Args:
         conn: SQLite database connection
-        
+
     Returns:
         List of host configuration dictionaries
     """
@@ -57,16 +58,15 @@ def get_hosts(conn: sqlite3.Connection) -> list[dict]:
 
 def get_unfinished_session(conn: sqlite3.Connection) -> Optional[int]:
     """Find the most recent unfinished audit session.
-    
+
     Args:
         conn: SQLite database connection
-        
+
     Returns:
         Session ID of unfinished session, or None if all sessions complete
     """
     cur = conn.execute(
-        "SELECT id FROM sessions WHERE finished_at IS NULL "
-        "ORDER BY id DESC LIMIT 1"
+        "SELECT id FROM sessions WHERE finished_at IS NULL " "ORDER BY id DESC LIMIT 1"
     )
     row = cur.fetchone()
     return int(row[0]) if row else None
@@ -74,11 +74,11 @@ def get_unfinished_session(conn: sqlite3.Connection) -> Optional[int]:
 
 def new_session(conn: sqlite3.Connection, mode: str) -> int:
     """Create new audit session record.
-    
+
     Args:
         conn: SQLite database connection
         mode: Session mode ('new' or 'resume')
-        
+
     Returns:
         ID of newly created session
     """
@@ -89,7 +89,7 @@ def new_session(conn: sqlite3.Connection, mode: str) -> int:
 
 def finish_session(conn: sqlite3.Connection, session_id: int) -> None:
     """Mark audit session as completed.
-    
+
     Args:
         conn: SQLite database connection
         session_id: ID of session to mark as finished
@@ -102,13 +102,13 @@ def start_check(
     conn: sqlite3.Connection, session_id: Optional[int], host_id: int, check_name: str
 ) -> int:
     """Record start of audit check execution.
-    
+
     Args:
         conn: SQLite database connection
         session_id: Current audit session ID
         host_id: Target host ID
         check_name: Name of audit strategy being executed
-        
+
     Returns:
         ID of check run record
     """
@@ -128,7 +128,7 @@ def mark_check(
     reason: Optional[str] = None,
 ) -> None:
     """Update check run status and completion time.
-    
+
     Args:
         conn: SQLite database connection
         check_run_id: ID of check run to update
@@ -150,7 +150,7 @@ def record_error(
     exit_code: Optional[int],
 ) -> None:
     """Record detailed error information for failed check runs.
-    
+
     Args:
         conn: SQLite database connection
         check_run_id: ID of check run that encountered error
@@ -168,7 +168,7 @@ def record_error(
 
 def ts() -> str:
     """Generate UTC timestamp in ISO format.
-    
+
     Returns:
         UTC timestamp string in ISO 8601 format
     """

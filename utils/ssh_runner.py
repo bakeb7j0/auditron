@@ -3,18 +3,20 @@
 Provides SSH client wrapper for executing commands on remote hosts
 with timeout handling and result encapsulation.
 """
+
 import shlex
 import subprocess
 
 
 class SSHResult:
     """Encapsulates the result of an SSH command execution.
-    
+
     Attributes:
         rc: Command exit code
         out: Standard output from command
         err: Standard error from command
     """
+
     def __init__(self, rc: int, out: str, err: str):
         self.rc = rc
         self.out = out
@@ -23,13 +25,14 @@ class SSHResult:
 
 class SSHClient:
     """SSH client for executing commands on remote hosts.
-    
+
     Provides connection management, command execution with timeouts,
     and tool availability caching for efficient audit operations.
     """
+
     def __init__(self, host: dict, timeout: int = 60):
         """Initialize SSH client for specific host.
-        
+
         Args:
             host: Host configuration dictionary with connection details
             timeout: Command execution timeout in seconds
@@ -40,10 +43,10 @@ class SSHClient:
 
     def which(self, binary: str) -> bool:
         """Check if binary exists on remote host (cached).
-        
+
         Args:
             binary: Name of binary to check for
-            
+
         Returns:
             True if binary exists and is executable, False otherwise
         """
@@ -59,15 +62,15 @@ class SSHClient:
         self, command: str, check: bool = False, use_sudo: bool | None = None
     ) -> SSHResult:
         """Execute command on remote host via SSH.
-        
+
         Args:
             command: Command to execute on remote host
             check: If True, raise exception on non-zero exit code
             use_sudo: Override host sudo setting for this command
-            
+
         Returns:
             SSHResult containing exit code, stdout, and stderr
-            
+
         Raises:
             RuntimeError: If check=True and command fails
         """

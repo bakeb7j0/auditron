@@ -3,15 +3,17 @@
 Captures comprehensive information about all running processes
 including process IDs, parent processes, users, and command lines.
 """
+
 from .base import AuditCheck, AuditContext
 
 
 class Processes(AuditCheck):
     """Process inventory collection strategy.
-    
+
     Takes a comprehensive snapshot of all running processes with
     detailed information for security and operational analysis.
     """
+
     name = "processes"
     requires = ("ps",)
 

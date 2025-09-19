@@ -3,16 +3,18 @@
 Defines the core AuditContext and AuditCheck abstractions that all
 audit strategies must implement.
 """
+
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 
 
 class AuditContext:
     """Execution context passed to audit strategies.
-    
+
     Provides access to host configuration, SSH client, database connection,
     and other resources needed for audit strategy execution.
     """
+
     def __init__(
         self,
         host: dict,
@@ -23,7 +25,7 @@ class AuditContext:
         session_id: Optional[int] = None,
     ):
         """Initialize audit context.
-        
+
         Args:
             host: Host configuration dictionary
             ssh: SSH client for remote command execution
@@ -42,19 +44,20 @@ class AuditContext:
 
 class AuditCheck(ABC):
     """Abstract base class for all audit strategies.
-    
+
     Defines the interface that all audit strategies must implement,
     including tool requirements and execution methods.
     """
+
     name: str = "base"
     requires: tuple[str, ...] = ()
 
     def probe(self, ctx: "AuditContext") -> bool:
         """Check if required tools are available on target host.
-        
+
         Args:
             ctx: Audit execution context
-            
+
         Returns:
             True if strategy can execute, False otherwise
         """
@@ -65,7 +68,7 @@ class AuditCheck(ABC):
     @abstractmethod
     def run(self, ctx: "AuditContext") -> None:
         """Execute the audit strategy.
-        
+
         Args:
             ctx: Audit execution context with host, SSH, and database access
         """

@@ -22,7 +22,7 @@ from utils.ssh_runner import SSHClient
 
 def run_all_checks(ctx: AuditContext) -> None:
     """Execute all enabled audit strategies for a given host context.
-    
+
     Args:
         ctx: AuditContext containing host, SSH client, database connection,
              and session information for strategy execution.
@@ -34,7 +34,7 @@ def run_all_checks(ctx: AuditContext) -> None:
 
 def run_mode(db_path: str, mode: str) -> None:
     """Execute audit in specified mode (new session).
-    
+
     Args:
         db_path: Path to SQLite database file
         mode: Session mode ('new' for fresh audit)
@@ -56,7 +56,7 @@ def run_mode(db_path: str, mode: str) -> None:
 
 def run_resume(db_path: str) -> None:
     """Resume an interrupted audit session.
-    
+
     Args:
         db_path: Path to SQLite database file containing unfinished session
     """
