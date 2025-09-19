@@ -1,7 +1,21 @@
+"""Command output parsing utilities for Auditron.
+
+Provides parsers for various system command outputs including
+RPM verification and network socket information.
+"""
+
 import re
 
 
 def parse_rpm_verify(output: str):
+    """Parse rpm -Va output into structured data.
+
+    Args:
+        output: Raw output from rpm -Va command
+
+    Returns:
+        List of tuples containing (verify_flags, file_path)
+    """
     rows = []
     for line in output.splitlines():
         line = line.rstrip()
@@ -21,6 +35,15 @@ _re_ss_pid = re.compile(r'users:\(\("([^"]+)",pid=(\d+)')
 
 
 def parse_ss_listen(line: str):
+    """Parse ss command output line for listening socket information.
+
+    Args:
+        line: Single line of ss command output
+
+    Returns:
+        Tuple of (protocol, local_address, state, pid, process_name)
+        or None if line cannot be parsed
+    """
     cols = line.split()
     if not cols:
         return None

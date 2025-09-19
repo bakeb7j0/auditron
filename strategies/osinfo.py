@@ -1,7 +1,19 @@
+"""OS and kernel information audit strategy.
+
+Collects basic operating system information including OS release,
+kernel version, and system architecture for system identification.
+"""
+
 from .base import AuditCheck, AuditContext
 
 
 class OSInfo(AuditCheck):
+    """Operating system information collection strategy.
+
+    Gathers basic OS identification including distribution name,
+    version, kernel information, and system architecture.
+    """
+
     name = "osinfo"
     requires: tuple[str, ...] = ()
 
@@ -27,7 +39,7 @@ class OSInfo(AuditCheck):
                 )
                 mark_check(ctx.db, cid, "ERROR", "osinfo failed")
                 return
-            name, version_id, osid = (res_os.out.strip().split("|") + ["", "", ""])[:3]
+            name, version_id, _osid = (res_os.out.strip().split("|") + ["", "", ""])[:3]
             kernel_arch = res_uname.out.strip()
             ctx.db.execute(
                 "INSERT INTO os_info(host_id,name,version_id,kernel,arch) VALUES (?,?,?,?,?)",

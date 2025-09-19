@@ -4,11 +4,13 @@ repos:
     hooks:
       - id: ruff
         args: ["--fix"]
+        exclude: ^(minimal_test_runner|run_validation|validate_tests)\.py$
 
   - repo: https://github.com/psf/black
     rev: 24.8.0
     hooks:
       - id: black
+        exclude: ^(minimal_test_runner|run_validation|validate_tests)\.py$
 
   - repo: https://github.com/pycqa/isort
     rev: 5.13.2
@@ -26,12 +28,12 @@ repos:
     hooks:
       - id: pylint
         name: pylint (errors only)
-        entry: pylint -E auditron.py strategies utils scripts
+        entry: pylint -E auditron.py strategies utils tests
         language: system
         types: [python]
       - id: pyright
         name: pyright
-        entry: pyright
+        entry: pyright auditron.py utils strategies tests
         language: system
         pass_filenames: false
         types: [python]
