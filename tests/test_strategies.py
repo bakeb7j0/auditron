@@ -187,6 +187,109 @@ class TestSocketsStrategy:
         assert len(ssh_sockets) >= 1
         assert ssh_sockets[0][0] == "tcp"
 
+    def test_sockets_run_with_netstat(self, audit_context):
+        """Test Sockets execution using netstat command fallback."""
+        audit_context.ssh.which.side_effect = lambda cmd: cmd == "netstat"
+        netstat_output = """tcp    0    0 0.0.0.0:22    0.0.0.0:*    LISTEN
+tcp    0    0 127.0.0.1:25  0.0.0.0:*    LISTEN
+udp    0    0 0.0.0.0:68    0.0.0.0:*           """
+        audit_context.ssh.run.return_value = SSHResult(0, netstat_output, "")
+
+        strategy = Sockets()
+        strategy.run(audit_context)
+
+        # Verify sockets were parsed and stored
+        sockets = audit_context.db.execute(
+            "SELECT proto, local, state FROM listen_sockets WHERE host_id = ?",
+            (audit_context.host["id"],),
+        ).fetchall()
+
+        assert len(sockets) >= 2
+        # Check TCP sockets
+        tcp_sockets = [s for s in sockets if s[0] == "tcp"]
+        assert len(tcp_sockets) >= 2
+
+    def test_sockets_run_command_failure(self, audit_context):
+        """Test Sockets handling of command failure."""
+        audit_context.ssh.which.return_value = True
+        audit_context.ssh.run.return_value = SSHResult(1, "", "Permission denied")
+
+        strategy = Sockets()
+        strategy.run(audit_context)
+
+        # Verify error was recorded
+        error = audit_context.db.execute(
+            "SELECT stderr, exit_code FROM errors WHERE check_run_id IN "
+            "(SELECT id FROM check_runs WHERE check_name = 'sockets')"
+        ).fetchone()
+
+        assert error is not None
+        assert "Permission denied" in error[0]
+        assert error[1] == 1
+
+    def test_sockets_run_empty_output(self, audit_context):
+        """Test Sockets handling of empty output."""
+        audit_context.ssh.which.return_value = True
+        audit_context.ssh.run.return_value = SSHResult(0, "", "")
+
+        strategy = Sockets()
+        strategy.run(audit_context)
+
+        # Verify no sockets were stored but check completed successfully
+        sockets = audit_context.db.execute(
+            "SELECT COUNT(*) FROM listen_sockets WHERE host_id = ?",
+            (audit_context.host["id"],),
+        ).fetchone()
+
+        assert sockets[0] == 0
+
+        # Verify check was marked as success
+        check_status = audit_context.db.execute(
+            "SELECT status FROM check_runs WHERE check_name = 'sockets'"
+        ).fetchone()
+        assert check_status[0] == "SUCCESS"
+
+    def test_sockets_run_exception_handling(self, audit_context):
+        """Test Sockets handling of exceptions during execution."""
+        audit_context.ssh.which.return_value = True
+        audit_context.ssh.run.side_effect = Exception("Network timeout")
+
+        strategy = Sockets()
+        strategy.run(audit_context)
+
+        # Verify error was recorded
+        check_run = audit_context.db.execute(
+            "SELECT status, reason FROM check_runs WHERE check_name = 'sockets'"
+        ).fetchone()
+
+        assert check_run[0] == "ERROR"
+        assert "Network timeout" in check_run[1]
+
+    def test_sockets_run_unparseable_ss_lines(self, audit_context):
+        """Test Sockets handling of unparseable ss output lines."""
+        audit_context.ssh.which.return_value = True
+        # Mix valid and invalid ss output lines
+        mixed_output = """LISTEN 0 128 0.0.0.0:22 0.0.0.0:* users:(("sshd",pid=1234,fd=3))
+invalid line format
+LISTEN 0 128 127.0.0.1:25 0.0.0.0:* users:(("postfix",pid=5678,fd=4))
+another bad line"""
+        audit_context.ssh.run.return_value = SSHResult(0, mixed_output, "")
+
+        strategy = Sockets()
+        strategy.run(audit_context)
+
+        # Verify lines were processed (some might be stored even if unparseable)
+        sockets = audit_context.db.execute(
+            "SELECT proto, process FROM listen_sockets WHERE host_id = ?",
+            (audit_context.host["id"],),
+        ).fetchall()
+
+        # Should have at least the valid lines, may have more depending on parsing behavior
+        assert len(sockets) >= 2
+        processes = [s[1] for s in sockets if s[1] is not None]
+        assert "sshd" in processes
+        assert "postfix" in processes
+
 
 class TestProcessesStrategy:
     """Test Processes strategy."""
@@ -227,6 +330,88 @@ class TestProcessesStrategy:
         assert init_process is not None
         assert init_process[1] == 0  # ppid should be 0
         assert init_process[2] == "root"
+
+    def test_processes_probe_fails_when_ps_unavailable(self, audit_context):
+        """Test that Processes probe fails when ps command unavailable."""
+        audit_context.ssh.which.return_value = False
+
+        strategy = Processes()
+        assert strategy.probe(audit_context) is False
+
+    def test_processes_run_command_failure(self, audit_context):
+        """Test Processes handling of command failure."""
+        audit_context.ssh.which.return_value = True
+        audit_context.ssh.run.return_value = SSHResult(1, "", "Permission denied")
+
+        strategy = Processes()
+        strategy.run(audit_context)
+
+        # Verify error was recorded
+        error = audit_context.db.execute(
+            "SELECT stderr, exit_code FROM errors WHERE check_run_id IN "
+            "(SELECT id FROM check_runs WHERE check_name = 'processes')"
+        ).fetchone()
+
+        assert error is not None
+        assert "Permission denied" in error[0]
+        assert error[1] == 1
+
+    def test_processes_run_empty_output(self, audit_context):
+        """Test Processes handling of empty output."""
+        audit_context.ssh.which.return_value = True
+        audit_context.ssh.run.return_value = SSHResult(0, "", "")
+
+        strategy = Processes()
+        strategy.run(audit_context)
+
+        # Verify no processes were stored but check completed successfully
+        process_count = audit_context.db.execute(
+            "SELECT COUNT(*) FROM processes WHERE host_id = ?",
+            (audit_context.host["id"],),
+        ).fetchone()
+
+        assert process_count[0] == 0
+
+    def test_processes_run_exception_handling(self, audit_context):
+        """Test Processes handling of exceptions during execution."""
+        audit_context.ssh.which.return_value = True
+        audit_context.ssh.run.side_effect = Exception("SSH connection lost")
+
+        strategy = Processes()
+        strategy.run(audit_context)
+
+        # Verify error was recorded
+        check_run = audit_context.db.execute(
+            "SELECT status, reason FROM check_runs WHERE check_name = 'processes'"
+        ).fetchone()
+
+        assert check_run[0] == "ERROR"
+        assert "SSH connection lost" in check_run[1]
+
+    def test_processes_run_malformed_lines(self, audit_context):
+        """Test Processes handling of malformed ps output lines."""
+        audit_context.ssh.which.return_value = True
+        # Mix valid and malformed ps lines
+        malformed_output = """1 0 root Thu Jan  1 00:00:01 1970 01:00:00 /sbin/init
+malformed line with insufficient fields
+1234 1 nobody Thu Jan  1 01:00:00 1970 02:00:00 /usr/bin/daemon
+"""
+        audit_context.ssh.run.return_value = SSHResult(0, malformed_output, "")
+
+        strategy = Processes()
+        strategy.run(audit_context)
+
+        # Verify only valid lines were parsed
+        processes = audit_context.db.execute(
+            "SELECT pid, cmd FROM processes WHERE host_id = ?",
+            (audit_context.host["id"],),
+        ).fetchall()
+
+        # Should have parsed 2 valid lines, skipped 1 malformed
+        assert len(processes) == 2
+        pids = [p[0] for p in processes]
+        assert 1 in pids
+        assert 1234 in pids
 
 
 class TestRoutesStrategy:

@@ -72,7 +72,7 @@
 
 | Component | Directory/File | Purpose | Coverage | Status |
 |-----------|----------------|---------|----------|--------|
-| **Unit Tests** | `tests/test_*.py` | Component-level testing | 111+ test methods, >90% coverage | ✅ Complete |
+| **Unit Tests** | `tests/test_*.py` | Component-level testing | 0+ tests methods, >90% coverage | ✅ Complete |
 | **Integration Tests** | `tests/integration/` | End-to-end workflow testing | Full audit simulation | ✅ Complete |
 | **Test Fixtures** | `tests/conftest.py` | Shared test data and mocks | Database fixtures, SSH mocking, sample outputs | ✅ Complete |
 | **Test Configuration** | `pytest.ini` | Test execution configuration | Markers, coverage settings, warning filters | ✅ Complete |

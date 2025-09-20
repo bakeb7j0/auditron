@@ -1,0 +1,5 @@
+# Runtime dependencies for Auditron
+# All dependencies are Python standard library - no external packages required!
+
+# PyInstaller for deployment packaging
+pyinstaller>=6.0.0

@@ -9,41 +9,41 @@ This document summarizes the comprehensive test suite created for Auditron, desi
 ### 1. Core Test Files Created
 
 #### Unit Tests (7 files)
-- **`tests/test_db.py`** - Database operations and utilities (47 test methods)
+- **`tests/test_db.py`** - Database operations and utilities (0+ tests methods)
   - Connection management and schema validation
   - Session lifecycle management  
   - Host configuration retrieval
   - Check run tracking and error recording
   - Foreign key constraints and data integrity
 
-- **`tests/test_parsing_comprehensive.py`** - Command output parsers (15 test methods)
+- **`tests/test_parsing_comprehensive.py`** - Command output parsers (0+ tests methods)
   - RPM verify output parsing with various formats
   - Socket (ss) output parsing for different protocols
   - Edge cases: empty output, malformed data, special characters
   - IPv4/IPv6 socket handling
 
-- **`tests/test_ssh_runner.py`** - SSH client functionality (20 test methods)
+- **`tests/test_ssh_runner.py`** - SSH client functionality (0+ tests methods)
   - SSH connection establishment and configuration
   - Command execution with/without sudo
   - Error handling and timeout management
   - Command injection prevention and quoting
   - Different authentication methods and ports
 
-- **`tests/test_strategies.py`** - Audit strategy implementations (25 test methods)
+- **`tests/test_strategies.py`** - Audit strategy implementations (0+ tests methods)
   - Individual strategy testing (OSInfo, Processes, Routes, etc.)
   - Strategy base class and probe functionality
   - Data collection and database storage
   - Error handling and recovery
   - Integration between strategies
 
-- **`tests/test_auditron.py`** - Main orchestrator (15 test methods)
+- **`tests/test_auditron.py`** - Main orchestrator (0+ tests methods)
   - CLI argument parsing and validation
   - Workflow orchestration (fresh vs resume)
   - AuditContext creation and management
   - Multi-host execution
   - Exception handling
 
-- **`tests/test_utilities.py`** - Utility functions (12 test methods)
+- **`tests/test_utilities.py`** - Utility functions (0+ tests methods)
   - Text compression and decompression
   - SHA256 hashing and data integrity
   - Path validation and security
@@ -213,7 +213,7 @@ Potential improvements to consider:
 ## Conclusion
 
 This comprehensive test suite provides:
-- **140+ test methods** covering all major functionality
+- **0+ tests methods** covering all major functionality
 - **Robust CI/CD integration** with GitHub Actions
 - **High code coverage** (≥80% overall, ≥90% core modules)
 - **Extensive mocking** for reliable, fast tests
