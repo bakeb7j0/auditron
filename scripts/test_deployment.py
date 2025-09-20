@@ -188,9 +188,9 @@ def test_database_operations(deployment_dir):
         try:
             # Import the automation test
             sys.path.insert(0, str(Path(__file__).parent.parent))
-            from tests.test_config_automation import test_config_deployment_script
+            from tests.test_config_automation import validate_config_deployment_script
 
-            if test_config_deployment_script(deployment_dir):
+            if validate_config_deployment_script(deployment_dir):
                 print("  ✅ Automated config test passed")
             else:
                 print("  ❌ Automated config test failed")

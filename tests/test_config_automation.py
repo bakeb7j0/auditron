@@ -11,8 +11,6 @@ import sys
 import tempfile
 from pathlib import Path
 
-import pytest
-
 
 def create_test_input():
     """Create test input for config_deployment.py."""
@@ -113,10 +111,7 @@ def validate_database_contents(db_path):
     return errors
 
 
-@pytest.mark.skip(
-    reason="Integration test called by deployment scripts, not standalone pytest"
-)
-def test_config_deployment_script(deployment_dir):
+def validate_config_deployment_script(deployment_dir):
     """Test the config_deployment.py script with automated input.
 
     This function is designed to be called by scripts/test_deployment.py
@@ -228,7 +223,7 @@ def main():
     print("🧪 Testing Auditron Configuration Automation")
     print("=" * 60)
 
-    if test_config_deployment_script(deployment_dir):
+    if validate_config_deployment_script(deployment_dir):
         print("\n✅ Configuration automation test passed!")
         print("🎯 The config script can be automated for testing and deployment")
         return 0

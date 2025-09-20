@@ -2,6 +2,6 @@
   "test_count": 128,
   "test_coverage": 94.0,
   "pylint_score": 9.02,
-  "skipped_tests": 1,
+  "skipped_tests": 0,
   "deselected_tests": 6
 }

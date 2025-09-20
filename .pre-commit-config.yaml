@@ -39,8 +39,8 @@ repos:
         types: [python]
       - id: update-metrics
         name: update project metrics and enforce quality standards
-        entry: python3 scripts/update_metrics.py --enforce-quality --verbose
+        entry: bash -c 'python3 scripts/update_metrics.py --enforce-quality --verbose && git add .project-metrics.json coverage.json'
         language: system
         pass_filenames: false
         always_run: true
-        stages: [commit]
+        stages: [pre-commit]
