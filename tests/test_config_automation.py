@@ -11,6 +11,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+import pytest
+
 
 def create_test_input():
     """Create test input for config_deployment.py."""
@@ -111,8 +113,16 @@ def validate_database_contents(db_path):
     return errors
 
 
+@pytest.mark.skip(
+    reason="Integration test called by deployment scripts, not standalone pytest"
+)
 def test_config_deployment_script(deployment_dir):
-    """Test the config_deployment.py script with automated input."""
+    """Test the config_deployment.py script with automated input.
+
+    This function is designed to be called by scripts/test_deployment.py
+    rather than run as a standalone pytest. It requires a deployment
+    directory structure that doesn't exist during unit testing.
+    """
     print("\n🧪 Testing config_deployment.py automation...")
 
     config_script = deployment_dir / "scripts" / "config_deployment.py"
