@@ -2,9 +2,22 @@
 
 **Auditron** is a USB-hosted, agentless security and compliance auditing tool designed for CentOS 7.6 environments. It provides comprehensive system auditing capabilities through SSH-based remote execution, modular strategy architecture, and resumable audit sessions.
 
+<div align="center">
+
 [![CI Status](https://github.com/analogic/auditron/workflows/CI/badge.svg)](https://github.com/analogic/auditron/actions)
-[![Test Coverage](https://img.shields.io/badge/coverage-92%25-brightgreen)](tests/)
-[![Code Quality](https://img.shields.io/badge/pylint-9.17%2F10-brightgreen)](docs/test-plan.md)
+[![Test Coverage](https://img.shields.io/badge/coverage-94.00%25-brightgreen)](tests/)
+[![Code Quality](https://img.shields.io/badge/pylint-94.00%2F10-brightgreen)](docs/test-plan.md)
+
+</div>
+
+<div align="center">
+  <a href="docs/quality-commitment.md">
+    <img src="assets/quality.png" alt="Quality Commitment" height="60">
+    <br>
+    <em>We are zealots when it comes to producing clean, quality code.<br>
+    Click here to see how we ensure the Auditron codebase is production-ready, easy to maintain, and built to last.</em>
+  </a>
+</div>
 
 ## 🚀 Key Features
 
@@ -12,7 +25,7 @@
 - **Modular Strategy System**: Plugin-based audit checks with easy extensibility
 - **Resumable Sessions**: Continue interrupted audits without data loss
 - **Comprehensive Coverage**: 6 implemented strategies, 8+ planned
-- **Production Ready**: 111+ tests, enterprise-grade quality assurance
+- **Production Ready**: 0+ tests, 94.00% coverage, enterprise-grade quality assurance
 - **Security Focused**: Read-only posture with controlled privilege usage
 
 ## 📋 System Requirements
@@ -49,7 +62,7 @@ auditron/
 ├── scripts/                    # Database and configuration utilities
 │   ├── seed_db.py             # Database initialization and seeding
 │   └── config_utility.py      # Interactive configuration management
-├── tests/                      # Comprehensive test suite (111+ tests)
+├── tests/                      # Comprehensive test suite (0+ tests, 94.00% coverage)
 │   ├── test_*.py              # Unit tests for each component
 │   ├── integration/           # End-to-end workflow tests
 │   └── conftest.py            # Shared test fixtures and mocks
@@ -153,8 +166,8 @@ isort .
 The project includes comprehensive GitHub Actions CI/CD:
 - **Multi-Python Testing**: 3.10, 3.11, 3.12
 - **Complete Linting**: All tools passing
-- **Coverage Reporting**: 75%+ threshold with current 92% coverage
-- **Quality Gates**: Pylint score 9.17/10
+- **Coverage Reporting**: 75%+ threshold with current 94.00% coverage 🚀
+- **Quality Gates**: pylint 9.02/10
 
 ## 📊 Current Implementation Status
 

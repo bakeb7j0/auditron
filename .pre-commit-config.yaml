@@ -37,3 +37,10 @@ repos:
         language: system
         pass_filenames: false
         types: [python]
+      - id: update-metrics
+        name: update project metrics and enforce quality standards
+        entry: python3 scripts/update_metrics.py --enforce-quality --verbose
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [commit]

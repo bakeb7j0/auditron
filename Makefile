@@ -87,6 +87,16 @@ dev-setup: install
 
 check: lint test
 
+# Metrics management
+update-metrics:
+	python3 scripts/update_metrics.py --verbose
+
+check-metrics:
+	python3 scripts/update_metrics.py --check-only
+
+enforce-quality:
+	python3 scripts/update_metrics.py --enforce-quality --verbose
+
 # Show available targets
 help:
 	@echo "Available targets:"
