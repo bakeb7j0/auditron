@@ -1,0 +1,37 @@
+# Test input file for config_deployment.py
+# Format: menu choices and inputs, one per line
+# Comments starting with # are ignored
+
+# Add first test host
+2
+web-server-01
+192.168.1.100
+root
+/home/test/.ssh/id_rsa
+22
+y
+
+# Add second test host  
+2
+db-server-01
+192.168.1.200
+dbadmin
+/home/test/.ssh/db_key
+2222
+n
+
+# List hosts to verify
+1
+
+# Configure global defaults
+4
+1
+2
+s
+2097152
+1
+120
+
+# Back to main menu and quit
+q
+q

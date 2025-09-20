@@ -30,7 +30,8 @@ MANIFEST
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
-*.spec
+# Keep our custom spec file
+# *.spec
 
 # Installer logs
 pip-log.txt
@@ -211,3 +212,20 @@ runtime/
 runtime/*
 r/
 r/*
+
+# Auditron deployment artifacts
+deployment/
+deployment/*
+aws*.zip
+*.deb
+*.rpm
+*.tar.gz
+*.zip
+
+# Auditron runtime data
+*.db
+*.db-journal
+logs/
+logs/*
+exports/
+exports/*
